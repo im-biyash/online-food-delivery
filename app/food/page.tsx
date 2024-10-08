@@ -1,58 +1,82 @@
-"use client"; // Ensure this directive is at the top to make it a client component
+"use client";
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import {Button} from "../../components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 
-import React from "react";
-import { useQuery } from "@tanstack/react-query";
+interface Food {
+  id: number;
+  name: string;
+  price: string;
+  image: string; 
+  reviewCount: string
+}
 
-const url = "https://dummyjson.com/recipes/1";
+const Page = () => {
+  const [food, setFood] = useState<Food[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-// Fetch products from the API
-const fetchProducts = async () => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error("Network response was not ok");
-  }
-  return response.json(); // Ensure the data is returned in JSON format
-};
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch("https://dummyjson.com/recipes");
+        if (!res.ok) {
+          throw new Error("Failed to fetch data");
+        }
+        const data = await res.json();
+        setFood(data.recipes); // Ensure that data.recipes is structured correctly
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-const Datafetching = () => {
-  const {
-    isLoading,
-    error,
-    data: products,
-  } = useQuery({
-    queryKey: ["products"],
-    queryFn: fetchProducts,
-  });
+    fetchData();
+  }, []);
 
-  // Log the data to inspect the structure
-  console.log(products);
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error}</p>;
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div>Error: {error.message}</div>;
-  }
 
   return (
-    <div className="h-screen">
-      <h1>Datas</h1>
+  
+    <div className="h-screen p-4">
+      <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 grid-cols-3 gap-9">
+        {food && food.map((foods: Food) => (
+          <Card key={foods.id} className=" w-[300px] rounded-lg border shadow-md flex flex-col items-center justify-center hover:bg-slate-300">
+            <CardHeader className="">
+              <div>
 
-      <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4">
-        {products?.map((mydata: any) => (
-          <div
-            key={mydata.id}
-            className="border-2 rounded-2xl flex flex-col gap-4 p-4 items-center hover:bg-red-200"
-          >
-            <img src={mydata.image} alt="myimage" className="h-[250px]" />
-            <h1>{mydata.name}</h1>
-            <h1>{mydata.price}</h1>
-          </div>
+              <Image
+                src={foods.image}
+                alt={foods.name}
+                width={300}
+                height={200}
+                className=" rounded-lg object-contain "
+              />
+              </div>
+            </CardHeader>
+            <CardContent className="text-center">
+              <CardTitle>{foods.name}</CardTitle>
+              <p>{foods.reviewCount}$</p>
+            </CardContent>
+            <CardFooter className="flex justify-center">
+              <Button className="mb-3">Order now</Button>
+            </CardFooter>
+          </Card>
         ))}
       </div>
     </div>
   );
 };
 
-export default Datafetching;
+export default Page;
